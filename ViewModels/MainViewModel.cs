@@ -15,8 +15,10 @@ public class MainViewModel
     private readonly IClipboardService _clipboardService;
     private readonly IUndoRedoService _undoRedoService;
     private readonly System.Timers.Timer _autoSaveTimer;
+    private CancellationTokenSource? _cancellationTokenSource;
     private bool _hasUnsavedChanges;
     private string _currentScriptBeforeChange = "";
+    private readonly Dictionary<string, List<DataTable>> _resultsCache = new();
 
     public ScriptTree ScriptTree { get; } = new();
     public ObservableCollection<ScriptNode> RootNodes => ScriptTree.RootNodes;
@@ -26,11 +28,15 @@ public class MainViewModel
 
     public ScriptNode? SelectedNode { get; private set; }
     public string CurrentScript { get; private set; } = "";
-    public List<DataTable>? QueryResults { get; private set; }
+    public List<DataTable>? QueryResults { get; set; }
+    public string? LastError { get; set; }
+    public string? CachedError { get; set; }
+    public int RowCount { get; set; } = 1000;
     public string StatusMessage { get; set; } = "Ready";
-    public string? LastError { get; private set; }
     public TimeSpan LastExecutionTime { get; private set; }
-    public bool IsExecuting { get; private set; }
+    public bool IsExecuting { get; set; }
+
+    public ISettingsService SettingsService => _settingsService;
 
     public bool CanUndo => _undoRedoService.CanUndo;
     public bool CanRedo => _undoRedoService.CanRedo;
@@ -319,11 +325,18 @@ public class MainViewModel
             ? ReplaceTemplateVariables(templateValues, scriptToRun)
             : scriptToRun;
 
+        if (RowCount > 0)
+        {
+            finalScript = $"SET ROWCOUNT {RowCount}\n{finalScript}\nSET ROWCOUNT 0";
+        }
+
+        _cancellationTokenSource = new CancellationTokenSource();
+        
         IsExecuting = true;
         StatusMessage = "Executing...";
         StatusChanged?.Invoke(this, EventArgs.Empty);
 
-        var result = await _databaseService.ExecuteQueryAsync(CurrentDatabase!, finalScript);
+        var result = await _databaseService.ExecuteQueryAsync(CurrentDatabase!, finalScript, _cancellationTokenSource.Token);
 
         IsExecuting = false;
         LastExecutionTime = result.Elapsed;
@@ -331,13 +344,16 @@ public class MainViewModel
         if (result.Error != null)
         {
             LastError = result.Error;
+            CachedError = result.Error;
             StatusMessage = $"Error: {result.Error} ({result.Elapsed.TotalSeconds:F2}s)";
             QueryResults = null;
         }
         else
         {
             LastError = null;
+            CachedError = null;
             QueryResults = result.Data;
+            CacheResults(SelectedNode!.Id, result.Data);
             var totalRows = result.Data.Sum(dt => dt.Rows.Count);
             var resultSetInfo = result.Data.Count > 1 
                 ? $" ({result.Data.Count} result sets)" 
@@ -347,6 +363,26 @@ public class MainViewModel
 
         ResultsChanged?.Invoke(this, EventArgs.Empty);
         StatusChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void CancelExecution()
+    {
+        _cancellationTokenSource?.Cancel();
+        _databaseService.CancelQuery();
+    }
+
+    public void CacheResults(string nodeId, List<DataTable> results)
+    {
+        _resultsCache[nodeId] = results.Select(dt => dt.Copy()).ToList();
+    }
+
+    public (List<DataTable>? Results, string? Error) GetCachedResults(string nodeId)
+    {
+        if (_resultsCache.TryGetValue(nodeId, out var results))
+        {
+            return (results.Select(dt => dt.Copy()).ToList(), null);
+        }
+        return (null, null);
     }
 
     public async Task<bool> TestDatabaseConnectionAsync()

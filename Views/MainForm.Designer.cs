@@ -23,6 +23,7 @@ namespace DBClip.Views
             this.btnSave = new System.Windows.Forms.ToolStripButton();
             this.btnDatabase = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.btnStop = new System.Windows.Forms.ToolStripButton();
             this.btnAddScript = new System.Windows.Forms.ToolStripButton();
             this.btnAddFolder = new System.Windows.Forms.ToolStripButton();
             this.btnDelete = new System.Windows.Forms.ToolStripButton();
@@ -30,7 +31,10 @@ namespace DBClip.Views
             this.btnUndo = new System.Windows.Forms.ToolStripButton();
             this.btnRedo = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.lblRowCount = new System.Windows.Forms.ToolStripLabel();
+            this.numRowCount = new System.Windows.Forms.ToolStripTextBox();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.chkCacheResults = new System.Windows.Forms.ToolStripButton();
             this.btnResetLayout = new System.Windows.Forms.ToolStripButton();
             this.cmbDatabaseSelect = new System.Windows.Forms.ToolStripComboBox();
             this.tabControlResults = new System.Windows.Forms.TabControl();
@@ -74,6 +78,7 @@ namespace DBClip.Views
             this.toolStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnPlay,
+            this.btnStop,
             this.btnSave,
             this.btnDatabase,
             this.toolStripSeparator1,
@@ -84,6 +89,9 @@ namespace DBClip.Views
             this.btnUndo,
             this.btnRedo,
             this.toolStripSeparator3,
+            this.lblRowCount,
+            this.numRowCount,
+            this.chkCacheResults,
             this.btnResetLayout,
             this.toolStripSeparator4,
             this.cmbDatabaseSelect});
@@ -110,8 +118,18 @@ namespace DBClip.Views
             this.btnPlay.Text = "Run Script";
             this.btnPlay.Click += new System.EventHandler(this.btnPlay_Click);
             // 
-            // btnSave
+            // btnStop
             // 
+            this.btnStop.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnStop.Image = CreateStopIcon();
+            this.btnStop.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnStop.Name = "btnStop";
+            this.btnStop.Size = new System.Drawing.Size(36, 36);
+            this.btnStop.Text = "Stop";
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            // 
+            // btnSave
+            //
             this.btnSave.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
             this.btnSave.Image = CreateSaveIcon();
             this.btnSave.ImageTransparentColor = System.Drawing.Color.Magenta;
@@ -195,8 +213,31 @@ namespace DBClip.Views
             this.toolStripSeparator3.Name = "toolStripSeparator3";
             this.toolStripSeparator3.Size = new System.Drawing.Size(6, 39);
             // 
-            // btnResetLayout
+            // lblRowCount
             // 
+            this.lblRowCount.Name = "lblRowCount";
+            this.lblRowCount.Size = new System.Drawing.Size(65, 20);
+            this.lblRowCount.Text = "Row Count:";
+            // 
+            // numRowCount
+            // 
+            this.numRowCount.Name = "numRowCount";
+            this.numRowCount.Size = new System.Drawing.Size(60, 28);
+            this.numRowCount.Text = "1000";
+            this.numRowCount.Leave += new System.EventHandler(this.numRowCount_Leave);
+            // 
+            // chkCacheResults
+            // 
+            this.chkCacheResults.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            this.chkCacheResults.Image = CreateCacheOffIcon();
+            this.chkCacheResults.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.chkCacheResults.Name = "chkCacheResults";
+            this.chkCacheResults.Size = new System.Drawing.Size(90, 36);
+            this.chkCacheResults.Text = "Cache Off";
+            this.chkCacheResults.Click += new System.EventHandler(this.chkCacheResults_Click);
+            // 
+            // btnResetLayout
+            //
             this.btnResetLayout.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
             this.btnResetLayout.Image = CreateResetIcon();
             this.btnResetLayout.ImageTransparentColor = System.Drawing.Color.Magenta;
@@ -461,6 +502,16 @@ namespace DBClip.Views
             return bmp;
         }
 
+        private static System.Drawing.Bitmap CreateStopIcon()
+        {
+            var bmp = new System.Drawing.Bitmap(24, 24);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var brush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(209, 52, 56));
+            g.FillRectangle(brush, 5, 5, 14, 14);
+            return bmp;
+        }
+
         private static System.Drawing.Bitmap CreateSaveIcon()
         {
             var bmp = new System.Drawing.Bitmap(24, 24);
@@ -583,10 +634,38 @@ namespace DBClip.Views
             return bmp;
         }
 
+        private static System.Drawing.Bitmap CreateCacheOffIcon()
+        {
+            var bmp = new System.Drawing.Bitmap(24, 24);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var pen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(128, 128, 128), 2);
+            g.DrawEllipse(pen, 3, 3, 18, 18);
+            using var brush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(200, 200, 200));
+            g.FillRectangle(brush, 8, 2, 8, 20);
+            return bmp;
+        }
+
+        private static System.Drawing.Bitmap CreateCacheOnIcon()
+        {
+            var bmp = new System.Drawing.Bitmap(24, 24);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var pen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(0, 120, 212), 2);
+            g.DrawEllipse(pen, 3, 3, 18, 18);
+            using var brush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(0, 120, 212));
+            g.FillRectangle(brush, 8, 2, 8, 20);
+            using var checkPen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(0, 120, 212), 2);
+            g.DrawLine(checkPen, 7, 12, 10, 15);
+            g.DrawLine(checkPen, 10, 15, 16, 9);
+            return bmp;
+        }
+
         #endregion
 
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripButton btnPlay;
+        private System.Windows.Forms.ToolStripButton btnStop;
         private System.Windows.Forms.ToolStripButton btnSave;
         private System.Windows.Forms.ToolStripButton btnDatabase;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
@@ -613,6 +692,9 @@ namespace DBClip.Views
         private System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem duplicateToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripLabel lblRowCount;
+        private System.Windows.Forms.ToolStripTextBox numRowCount;
+        private System.Windows.Forms.ToolStripButton chkCacheResults;
         private System.Windows.Forms.ToolStripButton btnResetLayout;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripComboBox cmbDatabaseSelect;

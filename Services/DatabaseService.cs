@@ -13,11 +13,14 @@ namespace DBClip.Services;
 public interface IDatabaseService
 {
     Task<bool> TestConnectionAsync(DatabaseSettings settings);
-    Task<(List<DataTable> Data, string? Error, TimeSpan Elapsed)> ExecuteQueryAsync(DatabaseSettings settings, string query);
+    Task<(List<DataTable> Data, string? Error, TimeSpan Elapsed)> ExecuteQueryAsync(DatabaseSettings settings, string query, CancellationToken cancellationToken = default);
+    void CancelQuery();
 }
 
 public class DatabaseService : IDatabaseService
 {
+    private CancellationTokenSource? _cancellationTokenSource;
+
     public async Task<bool> TestConnectionAsync(DatabaseSettings settings)
     {
         try
@@ -33,7 +36,7 @@ public class DatabaseService : IDatabaseService
     }
 
     public async Task<(List<DataTable> Data, string? Error, TimeSpan Elapsed)> ExecuteQueryAsync(
-        DatabaseSettings settings, string query)
+        DatabaseSettings settings, string query, CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
         var dataTables = new List<DataTable>();
@@ -41,13 +44,13 @@ public class DatabaseService : IDatabaseService
         try
         {
             using var conn = CreateConnection(settings);
-            await conn.OpenAsync();
+            await conn.OpenAsync(cancellationToken);
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = query;
             cmd.CommandTimeout = 300;
 
-            using var reader = await cmd.ExecuteReaderAsync();
+            using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             
             do
             {
@@ -94,6 +97,11 @@ public class DatabaseService : IDatabaseService
             "Sybase" => new OdbcConnection(settings.ConnectionString),
             _ => throw new NotSupportedException($"Provider {settings.Provider} is not supported")
         };
+    }
+
+    public void CancelQuery()
+    {
+        _cancellationTokenSource?.Cancel();
     }
 }
 

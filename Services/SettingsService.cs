@@ -69,7 +69,12 @@ public class SettingsService : ISettingsService
                 SavePassword = d.SavePassword
             }).ToList(),
             SelectedDatabaseName = Settings.SelectedDatabaseName,
-            LastSelectedNodeId = Settings.LastSelectedNodeId
+            LastSelectedNodeId = Settings.LastSelectedNodeId,
+            WindowLeft = Settings.WindowLeft,
+            WindowTop = Settings.WindowTop,
+            WindowWidth = Settings.WindowWidth,
+            WindowHeight = Settings.WindowHeight,
+            IsMaximized = Settings.IsMaximized
         };
         
         var json = JsonSerializer.Serialize(settingsToSave, JsonOptions);

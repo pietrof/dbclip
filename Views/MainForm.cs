@@ -18,14 +18,12 @@ public partial class MainForm : Form
     {
         InitializeComponent();
         
-        try
-        {
-            ResetWindowLayout();
-        }
-        catch { }
+        var settingsService = new SettingsService();
+        _ = settingsService.LoadAsync();
+        
+        ApplyWindowPosition(settingsService.Settings);
 
         var scriptRepo = new JsonScriptRepository();
-        var settingsService = new SettingsService();
         var databaseService = new DatabaseService();
         var templateParser = new TemplateParser();
         var clipboardService = new ClipboardService();
@@ -51,15 +49,67 @@ public partial class MainForm : Form
 
         Load += MainForm_Load;
         Shown += MainForm_Shown;
+        FormClosing += MainForm_FormClosing;
+        Resize += MainForm_Resize;
     }
 
-    private void MainForm_Shown(object? sender, EventArgs e)
+    private void MainForm_Resize(object? sender, EventArgs e)
     {
+        ResetWindowLayout();
+    }
+
+    private async void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        if (_viewModel?.SettingsService != null)
+        {
+            var settings = _viewModel.SettingsService.Settings;
+            settings.WindowLeft = Location.X;
+            settings.WindowTop = Location.Y;
+            settings.WindowWidth = Size.Width;
+            settings.WindowHeight = Size.Height;
+            settings.IsMaximized = WindowState == FormWindowState.Maximized;
+            await _viewModel.SettingsService.SaveAsync();
+        }
+    }
+
+    private void ApplyWindowPosition(AppSettings settings)
+    {
+        try
+        {
+            if (!double.IsNaN(settings.WindowLeft) && !double.IsNaN(settings.WindowTop))
+            {
+                var screen = Screen.FromPoint(new Point((int)settings.WindowLeft, (int)settings.WindowTop));
+                var bounds = screen.WorkingArea;
+                
+                if (settings.WindowLeft >= bounds.Left && settings.WindowLeft < bounds.Right - 100 &&
+                    settings.WindowTop >= bounds.Top && settings.WindowTop < bounds.Bottom - 100)
+                {
+                    StartPosition = FormStartPosition.Manual;
+                    Location = new Point((int)settings.WindowLeft, (int)settings.WindowTop);
+                }
+            }
+
+            if (settings.WindowWidth > 0 && settings.WindowHeight > 0)
+            {
+                Size = new Size((int)settings.WindowWidth, (int)settings.WindowHeight);
+            }
+
+            if (settings.IsMaximized)
+            {
+                WindowState = FormWindowState.Maximized;
+            }
+        }
+        catch { }
+
         try
         {
             ResetWindowLayout();
         }
         catch { }
+    }
+
+    private void MainForm_Shown(object? sender, EventArgs e)
+    {
     }
 
     private void SetupSplitters()
@@ -117,6 +167,42 @@ public partial class MainForm : Form
                 e.SuppressKeyPress = true;
             }
         };
+    }
+
+    private void chkCacheResults_Click(object? sender, EventArgs e)
+    {
+        chkCacheResults.Checked = !chkCacheResults.Checked;
+        
+        if (chkCacheResults.Checked)
+        {
+            chkCacheResults.Image = CreateCacheOnIcon();
+            chkCacheResults.Text = "Cache On";
+        }
+        else
+        {
+            chkCacheResults.Image = CreateCacheOffIcon();
+            chkCacheResults.Text = "Cache Off";
+        }
+    }
+
+    private void btnStop_Click(object? sender, EventArgs e)
+    {
+        _viewModel.CancelExecution();
+        _viewModel.IsExecuting = false;
+        _viewModel.StatusMessage = "Query cancelled";
+        UpdateUI();
+    }
+
+    private void numRowCount_Leave(object? sender, EventArgs e)
+    {
+        if (int.TryParse(numRowCount.Text, out var rowCount) && rowCount >= 0)
+        {
+            _viewModel.RowCount = rowCount;
+        }
+        else
+        {
+            numRowCount.Text = _viewModel.RowCount.ToString();
+        }
     }
 
     private async void MainForm_Load(object sender, EventArgs e)
@@ -199,6 +285,28 @@ public partial class MainForm : Form
     private void ViewModel_SelectedNodeChanged(object? sender, EventArgs e)
     {
         txtScriptEditor.Text = _viewModel.CurrentScript;
+        
+        if (chkCacheResults.Checked && _viewModel.SelectedNode != null)
+        {
+            var (results, _) = _viewModel.GetCachedResults(_viewModel.SelectedNode.Id);
+            if (results != null)
+            {
+                _viewModel.QueryResults = results;
+                _viewModel.LastError = null;
+                _viewModel.CachedError = null;
+                ViewModel_ResultsChanged(this, EventArgs.Empty);
+                return;
+            }
+            
+            if (_viewModel.CachedError != null)
+            {
+                _viewModel.LastError = _viewModel.CachedError;
+                _viewModel.QueryResults = null;
+                ViewModel_ResultsChanged(this, EventArgs.Empty);
+                return;
+            }
+        }
+        
         UpdateUI();
     }
 
@@ -275,7 +383,8 @@ public partial class MainForm : Form
         btnUndo.Enabled = _viewModel.CanUndo;
         btnRedo.Enabled = _viewModel.CanRedo;
         btnDelete.Enabled = _viewModel.SelectedNode != null;
-        btnPlay.Enabled = _viewModel.SelectedNode != null;
+        btnPlay.Enabled = _viewModel.SelectedNode != null && !_viewModel.IsExecuting;
+        btnStop.Enabled = _viewModel.IsExecuting;
     }
 
     private void treeViewScripts_AfterSelect(object sender, TreeViewEventArgs e)

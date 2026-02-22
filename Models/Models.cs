@@ -44,6 +44,11 @@ public class AppSettings
     public List<DatabaseSettings> Databases { get; set; } = new() { new DatabaseSettings() };
     public string? SelectedDatabaseName { get; set; }
     public string LastSelectedNodeId { get; set; } = "";
+    public double WindowLeft { get; set; } = double.NaN;
+    public double WindowTop { get; set; } = double.NaN;
+    public double WindowWidth { get; set; } = 1200;
+    public double WindowHeight { get; set; } = 800;
+    public bool IsMaximized { get; set; } = false;
 }
 
 public class RowContext

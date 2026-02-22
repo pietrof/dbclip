@@ -40,6 +40,10 @@ namespace DBClip.Views
             this.tabControlResults = new System.Windows.Forms.TabControl();
             this.splitContainerMain = new System.Windows.Forms.SplitContainer();
             this.splitContainerMain.SplitterWidth = 6;
+            this.panelTreeViewContainer = new System.Windows.Forms.Panel();
+            this.panelSearchBar = new System.Windows.Forms.Panel();
+            this.txtSearch = new System.Windows.Forms.TextBox();
+            this.btnClearSearch = new System.Windows.Forms.Button();
             this.treeViewScripts = new System.Windows.Forms.TreeView();
             this.splitContainerMiddle = new System.Windows.Forms.SplitContainer();
             this.splitContainerMiddle.SplitterWidth = 6;
@@ -66,6 +70,8 @@ namespace DBClip.Views
             this.splitContainerMiddle.Panel1.SuspendLayout();
             this.splitContainerMiddle.Panel2.SuspendLayout();
             this.splitContainerMiddle.SuspendLayout();
+            this.panelTreeViewContainer.SuspendLayout();
+            this.panelSearchBar.SuspendLayout();
             this.tableLayoutPanelRight.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvResults)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvContext)).BeginInit();
@@ -255,7 +261,7 @@ namespace DBClip.Views
             // 
             // splitContainerMain.Panel1
             // 
-            this.splitContainerMain.Panel1.Controls.Add(this.treeViewScripts);
+            this.splitContainerMain.Panel1.Controls.Add(this.panelTreeViewContainer);
             this.splitContainerMain.Panel1MinSize = 100;
             // 
             // splitContainerMain.Panel2
@@ -286,6 +292,58 @@ namespace DBClip.Views
             this.splitContainerMiddle.Panel2MinSize = 100;
             this.splitContainerMiddle.Size = new System.Drawing.Size(1034, 629);
             // 
+            // panelTreeViewContainer
+            // 
+            this.panelTreeViewContainer.Controls.Add(this.treeViewScripts);
+            this.panelTreeViewContainer.Controls.Add(this.panelSearchBar);
+            this.panelTreeViewContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panelTreeViewContainer.Location = new System.Drawing.Point(0, 0);
+            this.panelTreeViewContainer.Name = "panelTreeViewContainer";
+            this.panelTreeViewContainer.Size = new System.Drawing.Size(300, 628);
+            this.panelTreeViewContainer.TabIndex = 1;
+            // 
+            // panelSearchBar
+            // 
+            this.panelSearchBar.Controls.Add(this.txtSearch);
+            this.panelSearchBar.Controls.Add(this.btnClearSearch);
+            this.panelSearchBar.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panelSearchBar.Location = new System.Drawing.Point(0, 0);
+            this.panelSearchBar.Name = "panelSearchBar";
+            this.panelSearchBar.Padding = new System.Windows.Forms.Padding(8);
+            this.panelSearchBar.Size = new System.Drawing.Size(300, 144);
+            this.panelSearchBar.TabIndex = 0;
+            // 
+            // txtSearch
+            // 
+            this.txtSearch.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtSearch.Location = new System.Drawing.Point(8, 8);
+            this.txtSearch.Margin = new System.Windows.Forms.Padding(0);
+            this.txtSearch.Name = "txtSearch";
+            this.txtSearch.PlaceholderText = "Search scripts...";
+            this.txtSearch.Size = new System.Drawing.Size(234, 200);
+            this.txtSearch.TabIndex = 0;
+            // 
+            // btnClearSearch
+            // 
+            this.btnClearSearch.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnClearSearch.Location = new System.Drawing.Point(242, 8);
+            this.btnClearSearch.Margin = new System.Windows.Forms.Padding(0);
+            this.btnClearSearch.Name = "btnClearSearch";
+            this.btnClearSearch.Size = new System.Drawing.Size(250, 28);
+            this.btnClearSearch.TabIndex = 1;
+            this.btnClearSearch.Text = "X";
+            this.btnClearSearch.UseVisualStyleBackColor = true;
+            //
+            // panelTreeViewContainer
+            // 
+            this.panelTreeViewContainer.Controls.Add(this.treeViewScripts);
+            this.panelTreeViewContainer.Controls.Add(this.panelSearchBar);
+            this.panelTreeViewContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panelTreeViewContainer.Location = new System.Drawing.Point(0, 0);
+            this.panelTreeViewContainer.Name = "panelTreeViewContainer";
+            this.panelTreeViewContainer.Size = new System.Drawing.Size(300, 628);
+            this.panelTreeViewContainer.TabIndex = 1;
+            // 
             // treeViewScripts
             // 
             this.treeViewScripts.AllowDrop = true;
@@ -296,8 +354,8 @@ namespace DBClip.Views
             this.treeViewScripts.LabelEdit = true;
             this.treeViewScripts.Location = new System.Drawing.Point(0, 0);
             this.treeViewScripts.Name = "treeViewScripts";
-            this.treeViewScripts.Size = new System.Drawing.Size(200, 628);
-            this.treeViewScripts.TabIndex = 0;
+            this.treeViewScripts.Size = new System.Drawing.Size(300, 528);
+            this.treeViewScripts.TabIndex = 2;
             this.treeViewScripts.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeViewScripts_AfterSelect);
             this.treeViewScripts.AfterLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.treeViewScripts_AfterLabelEdit);
             this.treeViewScripts.MouseDown += new System.Windows.Forms.MouseEventHandler(this.treeViewScripts_MouseDown);
@@ -476,6 +534,8 @@ namespace DBClip.Views
             this.splitContainerMiddle.Panel1.ResumeLayout(false);
             this.splitContainerMiddle.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMiddle)).EndInit();
+            this.panelTreeViewContainer.ResumeLayout(false);
+            this.panelSearchBar.ResumeLayout(false);
             this.tableLayoutPanelRight.ResumeLayout(false);
             this.tableLayoutPanelRight.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvResults)).EndInit();
@@ -661,6 +721,17 @@ namespace DBClip.Views
             return bmp;
         }
 
+        private static System.Drawing.Bitmap CreateClearSearchIcon()
+        {
+            var bmp = new System.Drawing.Bitmap(16, 16);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var pen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(128, 128, 128), 2);
+            g.DrawLine(pen, 3, 3, 12, 12);
+            g.DrawLine(pen, 12, 3, 3, 12);
+            return bmp;
+        }
+
         #endregion
 
         private System.Windows.Forms.ToolStrip toolStrip1;
@@ -676,6 +747,10 @@ namespace DBClip.Views
         private System.Windows.Forms.ToolStripButton btnUndo;
         private System.Windows.Forms.ToolStripButton btnRedo;
         private System.Windows.Forms.SplitContainer splitContainerMain;
+        private System.Windows.Forms.Panel panelTreeViewContainer;
+        private System.Windows.Forms.Panel panelSearchBar;
+        private System.Windows.Forms.TextBox txtSearch;
+        private System.Windows.Forms.Button btnClearSearch;
         private System.Windows.Forms.TreeView treeViewScripts;
         private System.Windows.Forms.SplitContainer splitContainerMiddle;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanelRight;

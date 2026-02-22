@@ -46,6 +46,7 @@ public partial class MainForm : Form
         SetupImageList();
         SetupKeyboardShortcuts();
         SetupSplitters();
+        SetupSearchControls();
 
         Load += MainForm_Load;
         Shown += MainForm_Shown;
@@ -114,6 +115,104 @@ public partial class MainForm : Form
 
     private void SetupSplitters()
     {
+    }
+
+    private void SetupSearchControls()
+    {
+        txtSearch.TextChanged += TxtSearch_TextChanged;
+        btnClearSearch.Click += BtnClearSearch_Click;
+    }
+
+    private async void TxtSearch_TextChanged(object? sender, EventArgs e)
+    {
+        var searchText = txtSearch.Text;
+        
+        if (string.IsNullOrEmpty(searchText) || searchText.Length <= 2)
+        {
+            await Task.Run(() => this.Invoke(() => PopulateTreeView()));
+            return;
+        }
+
+        await FilterTreeViewAsync(searchText);
+    }
+
+    private async Task FilterTreeViewAsync(string searchText)
+    {
+        var searchLower = searchText.ToLowerInvariant();
+        
+        var filteredNodes = await Task.Run(() =>
+        {
+            return FilterNodes(_viewModel.RootNodes.ToList(), searchLower);
+        });
+
+        await Task.Run(() => this.Invoke(() =>
+        {
+            _isPopulatingTree = true;
+            treeViewScripts.Nodes.Clear();
+
+            foreach (var node in filteredNodes)
+            {
+                var treeNode = CreateFilteredTreeNode(node);
+                treeViewScripts.Nodes.Add(treeNode);
+            }
+
+            treeViewScripts.ExpandAll();
+            _isPopulatingTree = false;
+        }));
+    }
+
+    private List<ScriptNode> FilterNodes(List<ScriptNode> nodes, string searchLower)
+    {
+        var result = new List<ScriptNode>();
+        
+        foreach (var node in nodes)
+        {
+            var filteredChildren = node.Children.Count > 0 
+                ? FilterNodes(node.Children.ToList(), searchLower) 
+                : new List<ScriptNode>();
+            
+            var nameMatches = node.Name.ToLowerInvariant().Contains(searchLower);
+            var scriptMatches = node.NodeType == NodeType.Script && 
+                                node.ScriptContent.ToLowerInvariant().Contains(searchLower);
+            
+            if (nameMatches || scriptMatches || filteredChildren.Count > 0)
+            {
+                var newNode = new ScriptNode
+                {
+                    Id = node.Id,
+                    Name = node.Name,
+                    ScriptContent = node.ScriptContent,
+                    NodeType = node.NodeType,
+                    ParentId = node.ParentId,
+                    CreatedDate = node.CreatedDate,
+                    ModifiedDate = node.ModifiedDate,
+                    SortOrder = node.SortOrder,
+                    Children = new System.Collections.ObjectModel.ObservableCollection<ScriptNode>(filteredChildren)
+                };
+                result.Add(newNode);
+            }
+        }
+        
+        return result;
+    }
+
+    private TreeNode CreateFilteredTreeNode(ScriptNode node)
+    {
+        var imageIndex = node.NodeType == NodeType.Folder ? 0 : 1;
+        var treeNode = new TreeNode(node.Name, imageIndex, imageIndex);
+        treeNode.Tag = node;
+
+        foreach (var child in node.Children)
+        {
+            treeNode.Nodes.Add(CreateFilteredTreeNode(child));
+        }
+
+        return treeNode;
+    }
+
+    private void BtnClearSearch_Click(object? sender, EventArgs e)
+    {
+        txtSearch.Text = "";
     }
 
     private void SetupImageList()

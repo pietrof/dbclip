@@ -47,6 +47,7 @@ public partial class MainForm : Form
         SetupKeyboardShortcuts();
         SetupSplitters();
         SetupSearchControls();
+        SetupContextMenus();
 
         Load += MainForm_Load;
         Shown += MainForm_Shown;
@@ -121,6 +122,43 @@ public partial class MainForm : Form
     {
         txtSearch.TextChanged += TxtSearch_TextChanged;
         btnClearSearch.Click += BtnClearSearch_Click;
+    }
+
+    private void SetupContextMenus()
+    {
+        var editorContextMenu = new ContextMenuStrip();
+        var copyWithValuesItem = new ToolStripMenuItem("Copy with Values");
+        copyWithValuesItem.Click += EditorCopyWithValues_Click;
+        editorContextMenu.Items.Add(copyWithValuesItem);
+        txtScriptEditor.ContextMenuStrip = editorContextMenu;
+
+        var treeViewContextMenu = new ContextMenuStrip();
+        var duplicateWithValuesItem = new ToolStripMenuItem("Duplicate with Values");
+        duplicateWithValuesItem.Click += TreeViewDuplicateWithValues_Click;
+        treeViewContextMenu.Items.Add(duplicateWithValuesItem);
+        treeViewScripts.ContextMenuStrip = treeViewContextMenu;
+    }
+
+    private void EditorCopyWithValues_Click(object? sender, EventArgs e)
+    {
+        var textWithValues = _viewModel.GetScriptWithValuesApplied();
+        if (!string.IsNullOrEmpty(textWithValues))
+        {
+            Clipboard.SetText(textWithValues);
+        }
+    }
+
+    private void TreeViewDuplicateWithValues_Click(object? sender, EventArgs e)
+    {
+        if (treeViewScripts.SelectedNode?.Tag is ScriptNode selectedNode)
+        {
+            var newNode = _viewModel.DuplicateNodeWithValues(selectedNode);
+            if (newNode != null)
+            {
+                PopulateTreeView();
+                _viewModel.SelectNode(newNode);
+            }
+        }
     }
 
     private async void TxtSearch_TextChanged(object? sender, EventArgs e)

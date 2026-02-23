@@ -253,6 +253,47 @@ public class MainViewModel
         return newNode;
     }
 
+    public string GetScriptWithValuesApplied(string? script = null)
+    {
+        var scriptText = script ?? CurrentScript;
+        if (string.IsNullOrEmpty(scriptText)) return scriptText;
+
+        var values = CurrentRowContext.Values
+            .Where(kvp => kvp.Value != null)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToString() ?? "");
+        
+        return ReplaceTemplateVariables(values, scriptText);
+    }
+
+    public ScriptNode? DuplicateNodeWithValues(ScriptNode sourceNode)
+    {
+        var scriptWithValues = GetScriptWithValuesApplied(sourceNode.ScriptContent);
+        
+        var parent = sourceNode.Parent;
+        var newNode = new ScriptNode
+        {
+            Name = sourceNode.Name + " (Values)",
+            NodeType = NodeType.Script,
+            ScriptContent = scriptWithValues,
+            ParentId = parent?.Id,
+            Parent = parent
+        };
+
+        if (parent == null)
+        {
+            newNode.SortOrder = RootNodes.Count;
+            RootNodes.Add(newNode);
+        }
+        else
+        {
+            newNode.SortOrder = parent.Children.Count;
+            parent.Children.Add(newNode);
+        }
+
+        _ = SaveScriptsAsync();
+        return newNode;
+    }
+
     public void MoveNode(ScriptNode node, ScriptNode? newParent, int index)
     {
         if (node.Parent != null)
@@ -399,7 +440,6 @@ public class MainViewModel
 
     public void UpdateRowContext(DataGridViewRow row)
     {
-        CurrentRowContext.Values.Clear();
         foreach (DataGridViewCell cell in row.Cells)
         {
             if (cell.OwningColumn.DataPropertyName != null)

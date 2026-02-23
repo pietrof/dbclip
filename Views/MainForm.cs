@@ -133,9 +133,31 @@ public partial class MainForm : Form
         txtScriptEditor.ContextMenuStrip = editorContextMenu;
 
         var treeViewContextMenu = new ContextMenuStrip();
+        
+        var addScriptItem = new ToolStripMenuItem("Add New Script");
+        addScriptItem.Click += (s, e) => btnAddScript_Click(s, e);
+        treeViewContextMenu.Items.Add(addScriptItem);
+        
+        var addFolderItem = new ToolStripMenuItem("Add New Folder");
+        addFolderItem.Click += (s, e) => btnAddFolder_Click(s, e);
+        treeViewContextMenu.Items.Add(addFolderItem);
+        
+        treeViewContextMenu.Items.Add(new ToolStripSeparator());
+        
+        var duplicateItem = new ToolStripMenuItem("Duplicate");
+        duplicateItem.Click += TreeViewDuplicate_Click;
+        treeViewContextMenu.Items.Add(duplicateItem);
+        
         var duplicateWithValuesItem = new ToolStripMenuItem("Duplicate with Values");
         duplicateWithValuesItem.Click += TreeViewDuplicateWithValues_Click;
         treeViewContextMenu.Items.Add(duplicateWithValuesItem);
+        
+        treeViewContextMenu.Items.Add(new ToolStripSeparator());
+        
+        var deleteItem = new ToolStripMenuItem("Delete");
+        deleteItem.Click += (s, e) => DeleteSelectedNode();
+        treeViewContextMenu.Items.Add(deleteItem);
+        
         treeViewScripts.ContextMenuStrip = treeViewContextMenu;
     }
 
@@ -145,6 +167,19 @@ public partial class MainForm : Form
         if (!string.IsNullOrEmpty(textWithValues))
         {
             Clipboard.SetText(textWithValues);
+        }
+    }
+
+    private void TreeViewDuplicate_Click(object? sender, EventArgs e)
+    {
+        if (treeViewScripts.SelectedNode?.Tag is ScriptNode selectedNode)
+        {
+            var newNode = _viewModel.DuplicateNode(selectedNode);
+            if (newNode != null)
+            {
+                PopulateTreeView();
+                _viewModel.SelectNode(newNode);
+            }
         }
     }
 
